@@ -95,7 +95,7 @@ export const withTranslations = (
 		const resources = {
 			en: { translation: en },
 			fr: { translation: fr },
-      ru: { translation: ru },
+			ru: { translation: ru },
 		};
 		await i18n.init({
 			...commonOptions,
