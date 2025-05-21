@@ -19,8 +19,8 @@
 import ALParser from "accept-language-parser";
 import { getCookie, setCookie } from "cookies-next";
 import i18next, {
-	type InitOptions,
-	type KeysBuilderWithoutReturnObjects,
+  type InitOptions,
+  type KeysBuilderWithoutReturnObjects,
 } from "i18next";
 import type { AppContext, AppInitialProps, AppProps } from "next/app";
 import { type ComponentType, useMemo } from "react";
@@ -29,84 +29,85 @@ import { LanguageCookieKey } from "~/utils/cookieKeys";
 import { isSSR } from "~/utils/is-ssr";
 import en from "./translations/en.json";
 import fr from "./translations/fr.json";
+import ru from "./translations/ru.json";
 
-const Languages = ["en", "fr"] as const;
-const Resources = { en, fr };
+const Languages = ["en", "fr", "ru"] as const;
+const Resources = { en, fr, ru };
 
 export const persistLanguage = (language: Language) => {
-	const expires = new Date();
+  const expires = new Date();
 
-	expires.setMonth(expires.getMonth() + 1);
-	setCookie(LanguageCookieKey, language, { expires });
+  expires.setMonth(expires.getMonth() + 1);
+  setCookie(LanguageCookieKey, language, { expires });
 };
 
 // Thx https://github.com/zoriya/Kyoo/blob/master/front/apps/web/src/i18n.tsx
 
 export const withTranslations = (
-	AppToTranslate: ComponentType<AppProps> & {
-		getInitialProps?: (ctx: AppContext) => Promise<AppInitialProps>;
-	},
+  AppToTranslate: ComponentType<AppProps> & {
+    getInitialProps?: (ctx: AppContext) => Promise<AppInitialProps>;
+  }
 ) => {
-	const i18n = i18next.createInstance();
-	const commonOptions: InitOptions = {
-		interpolation: {
-			escapeValue: false,
-		},
-	};
+  const i18n = i18next.createInstance();
+  const commonOptions: InitOptions = {
+    interpolation: {
+      escapeValue: false,
+    },
+  };
 
-	const AppWithTranslations = (props: AppProps) => {
-		const li18n = useMemo(
-			() =>
-				isSSR()
-					? i18n
-					: (i18next.init({
-							...commonOptions,
-							lng: props.pageProps.__lang,
-							resources: props.pageProps.__resources,
-							// biome-ignore lint/style/noCommaOperator: OK
-						}),
-						i18next),
-			[props.pageProps.__lang, props.pageProps.__resources],
-		);
+  const AppWithTranslations = (props: AppProps) => {
+    const li18n = useMemo(
+      () =>
+        isSSR()
+          ? i18n
+          : (i18next.init({
+              ...commonOptions,
+              lng: props.pageProps.__lang,
+              resources: props.pageProps.__resources,
+              // biome-ignore lint/style/noCommaOperator: OK
+            }),
+            i18next),
+      [props.pageProps.__lang, props.pageProps.__resources]
+    );
 
-		return (
-			<I18nextProvider i18n={li18n}>
-				<AppToTranslate {...props} />
-			</I18nextProvider>
-		);
-	};
-	AppWithTranslations.getInitialProps = async (ctx: AppContext) => {
-		const props = (await AppToTranslate.getInitialProps?.(ctx)) ?? {
-			pageProps: {},
-		};
-		const lng =
-			getCookie(LanguageCookieKey)?.toString() ??
-			Languages.find(
-				//@ts-ignore
-				(lang) => lang === ctx.ctx.req?.cookies[LanguageCookieKey],
-			) ??
-			ALParser.pick(
-				Array.from(Languages),
-				ctx.ctx.req?.headers["accept-language"] ?? "en",
-				{ loose: true },
-			) ??
-			"en";
-		const resources = {
-			en: { translation: en },
-			fr: { translation: fr },
-		};
-		await i18n.init({
-			...commonOptions,
-			lng,
-			fallbackLng: ctx.router.defaultLocale || "en",
-			resources,
-		});
-		props.pageProps.__lang = lng;
-		props.pageProps.__resources = resources;
-		return props;
-	};
+    return (
+      <I18nextProvider i18n={li18n}>
+        <AppToTranslate {...props} />
+      </I18nextProvider>
+    );
+  };
+  AppWithTranslations.getInitialProps = async (ctx: AppContext) => {
+    const props = (await AppToTranslate.getInitialProps?.(ctx)) ?? {
+      pageProps: {},
+    };
+    const lng =
+      getCookie(LanguageCookieKey)?.toString() ??
+      Languages.find(
+        //@ts-ignore
+        (lang) => lang === ctx.ctx.req?.cookies[LanguageCookieKey]
+      ) ??
+      ALParser.pick(
+        Array.from(Languages),
+        ctx.ctx.req?.headers["accept-language"] ?? "en",
+        { loose: true }
+      ) ??
+      "en";
+    const resources = {
+      en: { translation: en },
+      fr: { translation: fr },
+    };
+    await i18n.init({
+      ...commonOptions,
+      lng,
+      fallbackLng: ctx.router.defaultLocale || "en",
+      resources,
+    });
+    props.pageProps.__lang = lng;
+    props.pageProps.__resources = resources;
+    return props;
+  };
 
-	return AppWithTranslations;
+  return AppWithTranslations;
 };
 
 export type Translator = (key: TranslationKey) => string;
